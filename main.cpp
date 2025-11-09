@@ -67,7 +67,7 @@ void switchToScene(Scene *scene)
 
 void initialise()
 {
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Multi-Level Platformer");
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Cursed Forest");
     InitAudioDevice();
 
     gMenu = new StartMenu(ORIGIN, LIGHT_COLOUR);

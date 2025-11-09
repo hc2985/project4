@@ -82,7 +82,7 @@ void initialise()
     gLevels.push_back(gLevelC);
     gLevels.push_back(gLevelD);
 
-    switchToScene(gLevels[4]);
+    switchToScene(gLevels[0]);
 
     SetTargetFPS(FPS);
 }
@@ -215,7 +215,7 @@ void render()
 
     gCurrentScene->render();
 
-    if (gCurrentScene != gLevels[0]) {
+    if (gCurrentScene != gLevels[4]) {
         EndMode2D();
     }
 

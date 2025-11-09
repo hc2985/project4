@@ -7,7 +7,7 @@ LevelC::~LevelC() { shutdown(); }
 
 void LevelC::initialise()
 {
-    mGameState.nextSceneID = 0;
+    mGameState.nextSceneID = 3;
 
     mGameState.spawnPoint = {mOrigin.x - 600.0f, mOrigin.y + 450.0f};
 
@@ -201,7 +201,7 @@ void LevelC::update(float deltaTime)
     panCamera(&mGameState.camera, &currentPlayerPosition);
 
     if (mGameState.player->getPosition().y > END_GAME_THRESHOLD) 
-        mGameState.nextSceneID = 0;
+        mGameState.nextSceneID = 4;
 }
 
 void LevelC::render()

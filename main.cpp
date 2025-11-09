@@ -215,7 +215,7 @@ void render()
 
     gCurrentScene->render();
 
-    if (gCurrentScene != gLevels[4]) {
+    if (gCurrentScene != gLevels[0]) {
         EndMode2D();
     }
 
@@ -249,7 +249,7 @@ int main(void)
 
         // Check for scene transitions
         int nextID = gCurrentScene->getState().nextSceneID;
-        if (nextID >= 0 && nextID < (int)gLevels.size()) {
+        if (nextID >= 0) {
             switchToScene(gLevels[nextID]);
 
             gCurrentScene->getState().nextSceneID = -1;

@@ -7,7 +7,7 @@ LevelD::~LevelD() { shutdown(); }
 void LevelD::initialise()
 {
 
-    mGameState.nextSceneID = -1;
+    mGameState.nextSceneID = 4;
 
     mGameState.spawnPoint = {mOrigin.x-200, mOrigin.y -     650.0f};
 

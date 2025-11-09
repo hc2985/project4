@@ -7,7 +7,7 @@ LevelB::~LevelB() { shutdown(); }
 
 void LevelB::initialise()
 {
-    mGameState.nextSceneID = 0;
+    mGameState.nextSceneID = 2;
 
     // Different spawn point for Level B
     mGameState.spawnPoint = {mOrigin.x - 570.0f, mOrigin.y + 150.0f};
@@ -235,7 +235,7 @@ void LevelB::update(float deltaTime)
 
     // Level transition - fall off the map
     if (mGameState.player->getPosition().y > END_GAME_THRESHOLD) 
-        mGameState.nextSceneID = 2; // Go back to Level A
+        mGameState.nextSceneID = 3;
 }
 
 void LevelB::render()

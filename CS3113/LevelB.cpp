@@ -249,8 +249,6 @@ void LevelB::render()
     {
         mGameState.enemies->at(i).render();
     }
-
-    mGameState.enemies->at(3).displayCollider();
     
     mGameState.map->render();
 }

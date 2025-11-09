@@ -215,7 +215,7 @@ void render()
 
     gCurrentScene->render();
 
-    if (gCurrentScene != gLevels[4]) {
+    if (gCurrentScene != gLevels[0]) {
         EndMode2D();
     }
 

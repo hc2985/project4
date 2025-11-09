@@ -55,18 +55,12 @@ void switchToScene(Scene *scene)
         gPlayerHealth = gCurrentScene->getState().player->getLives();
     }
 
+    // Switch
     gCurrentScene = scene;
     gCurrentScene->initialise();
 
     if (gCurrentScene->getState().player != nullptr) {
         gCurrentScene->getState().player->setLives(gPlayerHealth);
-    }
-
-    if (gCurrentScene != gLevels[0]) {
-        Entity *player = gCurrentScene->getState().player;
-        if (player && player->getLives() <= 0) {
-            switchToScene(gLevels[0]); 
-        }
     }
 }
 
@@ -125,6 +119,19 @@ void processInput()
 
 void update() 
 {
+    if (gCurrentScene != gLevels[0]) {
+        Entity *player = gCurrentScene->getState().player;
+        if (player) {
+            int livesNow = player->getLives();
+            if (livesNow < gPlayerHealth) {
+                PlaySound(gCurrentScene->getState().damage); 
+                if (livesNow <= 0) {
+                    switchToScene(gLevels[0]); 
+                }
+            }
+            gPlayerHealth = livesNow; 
+        }
+    }
     // Delta time
     float ticks = (float) GetTime();
     float deltaTime = ticks - gPreviousTicks;
@@ -239,12 +246,12 @@ int main(void)
         update();
 
         // Check for scene transitions
-        if (gCurrentScene->getState().nextSceneID > 0)
-        {
-            int id = gCurrentScene->getState().nextSceneID;
-            switchToScene(gLevels[id]);
-        }
+        int nextID = gCurrentScene->getState().nextSceneID;
+        if (nextID >= 0 && nextID < (int)gLevels.size()) {
+            switchToScene(gLevels[nextID]);
 
+            gCurrentScene->getState().nextSceneID = -1;
+        }
         render();
     }
 

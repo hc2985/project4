@@ -7,9 +7,9 @@ LevelD::~LevelD() { shutdown(); }
 void LevelD::initialise()
 {
 
-    mGameState.nextSceneID = 0;
+    mGameState.nextSceneID = -1;
 
-    mGameState.spawnPoint = {mOrigin.x-200, mOrigin.y - 650.0f};
+    mGameState.spawnPoint = {mOrigin.x-200, mOrigin.y - 1650.0f};
 
     mGameState.bgm = LoadMusicStream("assets/game/song.mp3");
     SetMusicVolume(mGameState.bgm, 0.33f);
@@ -17,6 +17,9 @@ void LevelD::initialise()
     mGameState.jumpSound = LoadSound("assets/game/step.mp3");
     mGameState.damage = LoadSound("assets/game/damage.mp3");
     mGameState.win = LoadSound("assets/game/win.mp3");
+
+    mPlayerWon = false;
+    mWinTimer  = 0.0f;
 
     /* 
        ----------- Health -------------
@@ -125,7 +128,20 @@ void LevelD::initialise()
 
 void LevelD::update(float deltaTime)
 {
-    if (mGameState.player->getPostion().y > 1400){
+
+    if (!mPlayerWon && mGameState.player->getPosition().y > END_GAME_THRESHOLD) {
+        PlaySound(mGameState.win);    
+        mPlayerWon = true;
+        mWinTimer = mWinDelay;        
+    }
+
+    if (mPlayerWon) {
+        mWinTimer -= deltaTime;       
+        if (mWinTimer <= 0.0f) {
+            mGameState.nextSceneID = 0; 
+        }
+    }
+    if (mGameState.player->getPosition().y > 1400){
         
     }
     int livesBefore = mGameState.player->getLives();
@@ -165,6 +181,9 @@ void LevelD::update(float deltaTime)
 
 void LevelD::render()
 {
+    if (mPlayerWon) {
+        DrawText("You Win!", 300, 280, 30, WHITE);
+    }
     ClearBackground(ColorFromHex(mBGColourHexCode));
 
     mGameState.player->render();
@@ -175,6 +194,8 @@ void LevelD::render()
     }
     
     mGameState.map->render();
+
+
 }
 
 void LevelD::shutdown()

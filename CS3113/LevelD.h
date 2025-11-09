@@ -5,6 +5,11 @@
 
 class LevelD : public Scene {
 private:
+    bool mPlayerWon = false;   
+    float mWinTimer  = 5.0f;  
+    float mWinDelay  = 1.0f; 
+
+
     unsigned int mLevelData[LEVEL_WIDTH * LEVEL_HEIGHT] = {
         33,23,23,23,23,23,23,23,23,23,23,34,23,23,23,23,23,23,23,23,23,23,23,35,
         11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,11,

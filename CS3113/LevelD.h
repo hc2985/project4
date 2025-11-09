@@ -6,7 +6,7 @@
 class LevelD : public Scene {
 private:
     bool mPlayerWon = false;   
-    float mWinTimer  = 5.0f;  
+    float mWinTimer  = 0.0f;  
     float mWinDelay  = 1.0f; 
 
 

@@ -9,7 +9,7 @@ void LevelD::initialise()
 
     mGameState.nextSceneID = -1;
 
-    mGameState.spawnPoint = {mOrigin.x-200, mOrigin.y - 1650.0f};
+    mGameState.spawnPoint = {mOrigin.x-200, mOrigin.y - 650.0f};
 
     mGameState.bgm = LoadMusicStream("assets/game/song.mp3");
     SetMusicVolume(mGameState.bgm, 0.33f);
@@ -19,7 +19,8 @@ void LevelD::initialise()
     mGameState.win = LoadSound("assets/game/win.mp3");
 
     mPlayerWon = false;
-    mWinTimer  = 0.0f;
+    mWinTimer  = 5.0f;
+    mWinDelay  = 5.0f; 
 
     /* 
        ----------- Health -------------
@@ -128,26 +129,11 @@ void LevelD::initialise()
 
 void LevelD::update(float deltaTime)
 {
-
-    if (!mPlayerWon && mGameState.player->getPosition().y > END_GAME_THRESHOLD) {
-        PlaySound(mGameState.win);    
-        mPlayerWon = true;
-        mWinTimer = mWinDelay;        
-    }
-
-    if (mPlayerWon) {
-        mWinTimer -= deltaTime;       
-        if (mWinTimer <= 0.0f) {
-            mGameState.nextSceneID = 0; 
-        }
-    }
-    if (mGameState.player->getPosition().y > 1400){
-        
-    }
     int livesBefore = mGameState.player->getLives();
 
     UpdateMusicStream(mGameState.bgm);
 
+   
     mGameState.player->update(
         deltaTime,
         nullptr,
@@ -156,7 +142,7 @@ void LevelD::update(float deltaTime)
         1
     );
 
-    for (int i = 0; i < 1; i++)
+    for (int i = 0; i < (int)mGameState.enemies->size(); ++i)
     {
         mGameState.enemies->at(i).update(
             deltaTime,
@@ -169,20 +155,39 @@ void LevelD::update(float deltaTime)
 
     int livesAfter = mGameState.player->getLives();
     if (livesAfter < livesBefore) {
+        PlaySound(mGameState.damage);
         mGameState.player->setPosition(mGameState.spawnPoint);
     }
 
     Vector2 currentPlayerPosition = mGameState.player->getPosition();
-    panCamera(&mGameState.camera, &currentPlayerPosition);
+    if (!mPlayerWon){
+        panCamera(&mGameState.camera, &currentPlayerPosition);
+    }
 
-    if (mGameState.player->getPosition().y > END_GAME_THRESHOLD) 
-        mGameState.nextSceneID = 0;
+
+    if (!mPlayerWon && mGameState.player->getPosition().y > END_GAME_THRESHOLD) {
+        PlaySound(mGameState.win);
+        mPlayerWon = true;
+        mWinTimer  = mWinDelay;
+    }
+
+    if (mPlayerWon) {
+        mWinTimer -= deltaTime;
+        if (mWinTimer <= 0.0f) {
+            mGameState.nextSceneID = 0; // main menu
+        }
+    }
 }
+
 
 void LevelD::render()
 {
     if (mPlayerWon) {
         DrawText("You Win!", 300, 280, 30, WHITE);
+        mGameState.camera.target = mOrigin;       
+        mGameState.camera.offset = mOrigin;        
+        mGameState.camera.zoom   = 1.0f;
+        mGameState.camera.rotation = 0.0f;
     }
     ClearBackground(ColorFromHex(mBGColourHexCode));
 

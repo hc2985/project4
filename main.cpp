@@ -82,7 +82,7 @@ void initialise()
     gLevels.push_back(gLevelC);
     gLevels.push_back(gLevelD);
 
-    switchToScene(gLevels[0]);
+    switchToScene(gLevels[4]);
 
     SetTargetFPS(FPS);
 }
@@ -125,11 +125,13 @@ void update()
             int livesNow = player->getLives();
             if (livesNow < gPlayerHealth) {
                 PlaySound(gCurrentScene->getState().damage); 
-                if (livesNow <= 0) {
-                    switchToScene(gLevels[0]); 
+                if (livesNow <= 0) {                    
+                    gPlayerHealth = MAX_HEALTH;
+                    switchToScene(gLevels[0]);
+                } else {
+                    gPlayerHealth = livesNow;
                 }
             }
-            gPlayerHealth = livesNow; 
         }
     }
     // Delta time
@@ -213,7 +215,7 @@ void render()
 
     gCurrentScene->render();
 
-    if (gCurrentScene != gLevels[0]) {
+    if (gCurrentScene != gLevels[4]) {
         EndMode2D();
     }
 

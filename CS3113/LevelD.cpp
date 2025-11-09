@@ -9,7 +9,7 @@ void LevelD::initialise()
 
     mGameState.nextSceneID = -1;
 
-    mGameState.spawnPoint = {mOrigin.x-200, mOrigin.y - 650.0f};
+    mGameState.spawnPoint = {mOrigin.x-200, mOrigin.y -     650.0f};
 
     mGameState.bgm = LoadMusicStream("assets/game/song.mp3");
     SetMusicVolume(mGameState.bgm, 0.33f);

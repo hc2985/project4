@@ -126,7 +126,7 @@ void update()
             if (livesNow < gPlayerHealth) {
                 PlaySound(gCurrentScene->getState().damage); 
                 if (livesNow <= 0) {                    
-                    gPlayerHealth = MAX_HEALTH;
+                    gCurrentScene->getState().player->setLives(MAX_HEALTH);
                     switchToScene(gLevels[0]);
                 } else {
                     gPlayerHealth = livesNow;

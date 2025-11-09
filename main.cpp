@@ -1,180 +1,124 @@
-#include "CS3113/Entity.h"
+/**
+* Author: Hyeonung Cho
+* Assignment: Rise of the AI
+* Date due: 2025-11-08, 11:59pm
+* I pledge that I have completed this assignment without
+* collaborating with anyone else, in conformance with the
+* NYU School of Engineering Policies and Procedures on
+* Academic Misconduct.
+**/
 
-struct GameState
-{
-    Entity *player;
-    Entity *enemy;
-    Map *map;
-    Music bgm;
-    Sound jumpSound;
+#include "CS3113/LevelD.h"
 
-    Camera2D camera;
-};
 
 // Global Constants
-constexpr int SCREEN_WIDTH  = 1000,
-              SCREEN_HEIGHT = 600,
-              FPS           = 120;
+constexpr int SCREEN_WIDTH     = 1000,
+              SCREEN_HEIGHT    = 600,
+              FPS              = 120,
+              NUMBER_OF_LEVELS = 5;
 
-constexpr char    BG_COLOUR[]      = "#011627";
-constexpr Vector2 ORIGIN           = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 },
-                  ATLAS_DIMENSIONS = { 11,12 },
-                  IDLE_DIMENSIONS = { 1,18 };
-
-
-constexpr int   NUMBER_OF_TILES         = 20,
-                NUMBER_OF_BLOCKS        = 3;
-constexpr float TILE_DIMENSION          = 75.0f,
-                // in m/ms², since delta time is in ms
-                ACCELERATION_OF_GRAVITY = 981.0f,
-                FIXED_TIMESTEP          = 1.0f / 60.0f,
-                END_GAME_THRESHOLD      = 800.0f;
-
-constexpr int LEVEL_WIDTH  = 24,
-              LEVEL_HEIGHT = 18;
+constexpr char BG_COLOUR[] = "#011627";
+constexpr char LIGHT_COLOUR[] = "#9db0e1ff";
+constexpr Vector2 ORIGIN   = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
+            
+constexpr float FIXED_TIMESTEP = 1.0f / 60.0f;
 
 // Global Variables
 AppStatus gAppStatus   = RUNNING;
 float gPreviousTicks   = 0.0f,
       gTimeAccumulator = 0.0f;
 
-unsigned int gLevelData[] = {
-    4 , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4,
-    11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,25, 0,11,
-    11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,25, 0, 0, 0, 0, 0, 1, 3, 0, 0, 0, 0,11,
-    11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,15,17, 0, 0, 0, 0,11,
-    11, 0, 0, 0, 0, 0,25, 0, 0,25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,25, 0,11,
-    11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,25, 0, 0, 0, 0, 0, 0, 0, 0,11,
-    11, 0, 0,25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 3, 0, 0, 0,11,
-    11, 0, 0, 0, 0,25, 0, 0, 0, 0, 0,25, 0, 0, 0, 0,15,16,16,17, 0, 0, 0,11,
-    11, 0, 0, 0, 0, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,37,
-    11, 0, 0, 0,25, 0,15,16,17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,15,30,
-    11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,25, 0, 0, 0, 0, 0, 0, 0, 0, 0,25, 0,11,
-    11, 0, 1, 2, 3, 0, 0, 0, 0,25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,11,
-    11, 0,15,16,17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 2, 2, 2, 2,37,
-    11, 0, 0, 0, 0,25, 0,25, 0, 0,25, 0, 0, 0, 0, 0,15,16,16,16,16,16,16,30,
-    11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,11,
-    36, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,37,
-    8 , 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,10,
-    15,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,17
-};
+Scene *gCurrentScene = nullptr;
+std::vector<Scene*> gLevels = {};
 
+StartMenu *gMenu = nullptr;
+LevelA *gLevelA = nullptr;
+LevelB *gLevelB = nullptr;
+LevelC *gLevelC = nullptr;
+LevelD *gLevelD = nullptr;
 
-GameState gState;
+// Global variable to preserve health across levels
+int gPlayerHealth = MAX_HEALTH;
 
 // Function Declarations
+void switchToScene(Scene *scene);
 void initialise();
 void processInput();
 void update();
 void render();
+void renderUI();
 void shutdown();
+
+void switchToScene(Scene *scene)
+{   
+    if (gCurrentScene != nullptr && gCurrentScene->getState().player != nullptr) {
+        gPlayerHealth = gCurrentScene->getState().player->getLives();
+    }
+
+    gCurrentScene = scene;
+    gCurrentScene->initialise();
+
+    if (gCurrentScene->getState().player != nullptr) {
+        gCurrentScene->getState().player->setLives(gPlayerHealth);
+    }
+
+    if (gCurrentScene != gLevels[0]) {
+        Entity *player = gCurrentScene->getState().player;
+        if (player && player->getLives() <= 0) {
+            switchToScene(gLevels[0]); 
+        }
+    }
+}
+
 
 void initialise()
 {
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Maps");
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Multi-Level Platformer");
     InitAudioDevice();
 
-    gState.bgm = LoadMusicStream("assets/game/04 - Silent Forest.wav");
-    SetMusicVolume(gState.bgm, 0.33f);
-    // PlayMusicStream(gState.bgm);
+    gMenu = new StartMenu(ORIGIN, LIGHT_COLOUR);
+    gLevelA = new LevelA(ORIGIN, BG_COLOUR);
+    gLevelB = new LevelB(ORIGIN, BG_COLOUR);
+    gLevelC = new LevelC(ORIGIN, BG_COLOUR);
+    gLevelD = new LevelD(ORIGIN, BG_COLOUR);
 
-    gState.jumpSound = LoadSound("assets/game/Dirt Jump.wav");
+    gLevels.push_back(gMenu);
+    gLevels.push_back(gLevelA);
+    gLevels.push_back(gLevelB);
+    gLevels.push_back(gLevelC);
+    gLevels.push_back(gLevelD);
 
-    /*
-        ----------- MAP -----------
-    */
-    gState.map = new Map(
-        LEVEL_WIDTH, LEVEL_HEIGHT,   // map grid cols & rows
-        (unsigned int *) gLevelData, // grid data
-        "assets/moss/TileSet.png",   // texture filepath
-        TILE_DIMENSION,              // tile size
-        7, 7,                        // texture cols & rows
-        ORIGIN                       // in-game origin
-    );
-
-    /*
-        ----------- PROTAGONIST -----------
-    */
-    std::map<Direction, std::vector<int>> playerAnimationAtlas = {
-        {LEFT,  {  1,  2,  3,  4,  5,  6,  7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24}},
-        {FALL,  {  36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47 }},
-        {STANDING,  {  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 }}  
-    };
-
-   
-
-    float sizeRatio  = 52.0f / 64.0f;
-
-
-    // Assets from @see https://sscary.itch.io/the-adventurer-female
-    gState.player = new Entity(
-        {ORIGIN.x - 600.0f, ORIGIN.y + 400.0f}, // position
-        {250.0f * sizeRatio, 250.0f},           // scale
-        "assets/Character/base/redhood.png",                 // texture file address
-        ATLAS,                                  // single image or atlas?
-        ATLAS_DIMENSIONS,                       // atlas dimensions
-        playerAnimationAtlas,                  // actual atlas
-        PLAYER,                                  // entity type
-        "assets/Character/idle/idlesheet.png",
-        IDLE_DIMENSIONS
-    );
-
-    gState.player->setColliderDimensions({
-        gState.player->getScale().x * 0.1f,  // width
-        gState.player->getScale().y * 0.2f    // height
-    });
-
-    gState.player->setOrigin({static_cast<float>(gState.player->getScale().x) / 2.0f, static_cast<float>(gState.player->getScale().y) / 1.7f});
-
-    gState.player->setJumpingPower(600.0f);
-    gState.player->setAcceleration({0.0f, ACCELERATION_OF_GRAVITY});
-
-    /*
-        ----------- Enemy -----------
-    */
-    gState.enemy = new Entity(
-        {ORIGIN.x + 300.0f, ORIGIN.y + 400.0f},  // position
-        {100.0f * sizeRatio, 80.0f},             // scale
-        "assets/Slimes/SlimeGreen/SlimeBasic_00000.png",  // texture
-        NPC                                        // entity type
-    );
-
-    gState.enemy->setAIType(WANDERER);
-    gState.enemy->setAIState(WALKING);
-    gState.enemy->setSpeed(100);
-    gState.enemy->setAcceleration({0.0f, ACCELERATION_OF_GRAVITY});
-    gState.enemy->setColliderDimensions({
-        gState.enemy->getScale().x * 0.5f,
-        gState.enemy->getScale().y * 0.6f
-    });
-
-    /*
-        ----------- CAMERA -----------
-    */
-    gState.camera = { 0 };                                // zero initialize
-    gState.camera.target = gState.player->getPosition(); // camera follows player
-    gState.camera.offset = ORIGIN;                        // camera offset to center of screen
-    gState.camera.rotation = 0.0f;                        // no rotation
-    gState.camera.zoom = 1.0f;                            // default zoom
+    switchToScene(gLevels[0]);
 
     SetTargetFPS(FPS);
 }
 
 void processInput() 
 {
-    gState.player->resetMovement();
-
-    if      (IsKeyDown(KEY_A)) gState.player->moveLeft();
-    else if (IsKeyDown(KEY_D)) gState.player->moveRight();
-
-    if (IsKeyPressed(KEY_W) && gState.player->isCollidingBottom())
-    {
-        gState.player->jump();
-        PlaySound(gState.jumpSound);
+    
+    if (gCurrentScene == gLevels[0]) {
+        if (IsKeyPressed(KEY_ENTER)) gCurrentScene->getState().nextSceneID = 1;
+        if (IsKeyPressed(KEY_Q) || WindowShouldClose()) gAppStatus = TERMINATED;
+        return;
     }
 
-    if (GetLength(gState.player->getMovement()) > 1.0f) 
-        gState.player->normaliseMovement();
+
+    gCurrentScene->getState().player->resetMovement();
+
+    if      (IsKeyDown(KEY_A)) gCurrentScene->getState().player->moveLeft();
+    else if (IsKeyDown(KEY_D)) gCurrentScene->getState().player->moveRight();
+    
+    if (IsKeyDown(KEY_SPACE)) gCurrentScene->getState().player->blitz(gCurrentScene->getState().map);
+
+    if (IsKeyPressed(KEY_W) && 
+        gCurrentScene->getState().player->isCollidingBottom())
+    {
+        gCurrentScene->getState().player->jump();
+        PlaySound(gCurrentScene->getState().jumpSound);
+    }
+
+    if (GetLength(gCurrentScene->getState().player->getMovement()) > 1.0f) 
+        gCurrentScene->getState().player->normaliseMovement();
 
     if (IsKeyPressed(KEY_Q) || WindowShouldClose()) gAppStatus = TERMINATED;
 }
@@ -197,31 +141,57 @@ void update()
 
     while (deltaTime >= FIXED_TIMESTEP)
     {
-        UpdateMusicStream(gState.bgm);
-
-        gState.player->update(
-            FIXED_TIMESTEP,
-            nullptr,
-            gState.map,
-            gState.enemy,
-            1
-        );
-
-        gState.enemy->update(
-            FIXED_TIMESTEP,
-            gState.player,
-            gState.map,
-            nullptr,       // Enemy doesn't collide with other enemies yet
-            0              // 0 count
-        );
-
+        gCurrentScene->update(FIXED_TIMESTEP);
         deltaTime -= FIXED_TIMESTEP;
+    }
 
-        Vector2 currentPlayerPosition = gState.player->getPosition();
+    gTimeAccumulator = deltaTime;
+}
 
-        panCamera(&gState.camera, &currentPlayerPosition);
+void renderUI()
+{
+    if (gCurrentScene == gLevels[0]) return;
 
-        if (gState.player->getPosition().y > 800.0f) gAppStatus = TERMINATED;
+    int heartSize = 50;
+    int spacing = 10;
+    int startX = SCREEN_WIDTH - (heartSize * MAX_HEALTH) - (spacing * (MAX_HEALTH - 1)) - 20;
+    int startY = 20;
+
+    Vector2 HEART_DIMENSIONS = { 1, 5 };
+    
+    int playerLives = gCurrentScene->getState().player->getLives();
+    
+    for (int i = 0; i < MAX_HEALTH; i++) 
+    {
+        Rectangle sourceRect;
+        
+        if (i < playerLives) {
+            // Full heart
+            sourceRect = getUVRectangle(
+                &gCurrentScene->getState().heartTexture,
+                0,      
+                HEART_DIMENSIONS.x, 
+                HEART_DIMENSIONS.y      
+            );
+        } else {
+            // Empty heart
+            sourceRect = getUVRectangle(
+                &gCurrentScene->getState().heartTexture,
+                4,     
+                HEART_DIMENSIONS.x,     
+                HEART_DIMENSIONS.y       
+            );
+        }
+        
+        Rectangle destRect = {
+            static_cast<float>(startX + (heartSize + spacing) * i),
+            static_cast<float>(startY),
+            static_cast<float>(heartSize),
+            static_cast<float>(heartSize)
+        };
+        
+        DrawTexturePro(gCurrentScene->getState().heartTexture, sourceRect, destRect, 
+                      {0, 0}, 0.0f, WHITE);
     }
 }
 
@@ -230,25 +200,30 @@ void render()
     BeginDrawing();
     ClearBackground(ColorFromHex(BG_COLOUR));
 
-    BeginMode2D(gState.camera);
+    if (gCurrentScene != gLevels[0]) {
+        BeginMode2D(gCurrentScene->getState().camera);
+    }
 
-    gState.player->render();
-    gState.enemy->render();
-    gState.map->render();
+    gCurrentScene->render();
 
-    EndMode2D();
+    if (gCurrentScene != gLevels[0]) {
+        EndMode2D();
+    }
+
+    renderUI();
 
     EndDrawing();
 }
 
 void shutdown() 
 {
-    delete gState.player;
-    delete gState.enemy; 
-    delete gState.map;
+    delete gMenu;
+    delete gLevelA;
+    delete gLevelB;
+    delete gLevelC;
+    delete gLevelD;
 
-    UnloadMusicStream(gState.bgm);
-    UnloadSound(gState.jumpSound);
+    for (int i = 0; i < NUMBER_OF_LEVELS; i++) gLevels[i] = nullptr;
 
     CloseAudioDevice();
     CloseWindow();
@@ -262,6 +237,14 @@ int main(void)
     {
         processInput();
         update();
+
+        // Check for scene transitions
+        if (gCurrentScene->getState().nextSceneID > 0)
+        {
+            int id = gCurrentScene->getState().nextSceneID;
+            switchToScene(gLevels[id]);
+        }
+
         render();
     }
 

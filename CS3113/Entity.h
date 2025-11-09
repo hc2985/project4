@@ -3,11 +3,11 @@
 
 #include "Map.h"
 
-enum Direction    { LEFT, RIGHT, JUMP, FALL, STANDING }; // For walking
+enum Direction    { LEFT, RIGHT, JUMP, FALL, STANDING, L_ATTACK, R_ATTACK, U_ATTACK, BLITZ}; // For walking / Actions
 enum EntityStatus { ACTIVE, INACTIVE                   };
 enum EntityType   { PLAYER, BLOCK, PLATFORM, NPC, NONE };
-enum AIType       { WANDERER, FOLLOWER                 };
-enum AIState      { WALKING, IDLE, FOLLOWING           };
+enum AIType       { WANDERER, FOLLOWER, FLYER, BOSS    };
+enum AIState      { WALKING, IDLE, FOLLOWING, ATTACK_L, ATTACK_R, ATTACK_U, WANDER };
 
 class Entity
 {
@@ -34,6 +34,10 @@ private:
 
     int mCurrentFrameIndex = 0;
     float mAnimationTime = 0.0f;
+    float mInvincibilityTimer = 0.0f;
+
+    Vector2 mSpawnPoint;
+    bool mReturningToSpawn = false;
 
     bool mIsJumping = false;
     float mJumpingPower = 0.0f;
@@ -42,6 +46,13 @@ private:
     float mAngle;
     int mLives;
     bool mlookingLeft = false;
+
+    float mAttackCooldown = 0.0f; 
+    float mAttackCooldownTime = 4.0f;
+
+
+    bool mInAnimation = false;
+    bool mAttacking = false;
 
 
     bool mIsCollidingTop    = false;
@@ -57,10 +68,10 @@ private:
 
     bool isColliding(Entity *other) const;
 
-    void checkCollisionY(Entity *collidableEntities, int collisionCheckCount);
+    void checkCollisionY(std::vector<Entity> *collidableEntities, int collisionCheckCount);
     void checkCollisionY(Map *map);
 
-    void checkCollisionX(Entity *collidableEntities, int collisionCheckCount);
+    void checkCollisionX(std::vector<Entity> *collidableEntities, int collisionCheckCount);
     void checkCollisionX(Map *map);
     
     void resetColliderFlags() 
@@ -74,13 +85,15 @@ private:
     void animate(float deltaTime);
     void AIActivate(Entity *target);
     void AIWander();
+    void AIFlyer();
     void AIFollow(Entity *target);
+    void AIBoss(Entity *target);
 
 public:
     static constexpr int   DEFAULT_SIZE          = 250;
     static constexpr int   DEFAULT_SPEED         = 200;
     static constexpr int   DEFAULT_FRAME_SPEED   = 20;
-    static constexpr float Y_COLLISION_THRESHOLD = 0.8f;
+    static constexpr float Y_COLLISION_THRESHOLD = 0.5f;
 
     Entity();
     Entity(Vector2 position, Vector2 scale, const char *textureFilepath, 
@@ -92,7 +105,7 @@ public:
     ~Entity();
 
     void update(float deltaTime, Entity *player, Map *map, 
-        Entity *collidableEntities, int collisionCheckCount);
+        std::vector<Entity> *collidableEntities, int collisionCheckCount);
     void render();
     void normaliseMovement() { Normalise(&mMovement); }
 
@@ -105,6 +118,12 @@ public:
 
     void moveLeft()  { mMovement.x = -1.8f; mDirection = LEFT;  }
     void moveRight() { mMovement.x = 1.8f; mDirection = RIGHT;  }
+    void blitz(Map *map);
+
+
+    void attackLeft() { mMovement.x = -5.0f; mDirection = L_ATTACK; mCurrentFrameIndex = 0; }
+    void attackRight() {mMovement.x = 5.0f; mDirection = R_ATTACK; mCurrentFrameIndex = 0; }
+    void attackUp() {  mVelocity.y -= 600.0f; mDirection = U_ATTACK; mCurrentFrameIndex = 0; }
 
     void resetMovement() { mMovement = { 0.0f, 0.0f }; }
 
@@ -113,11 +132,13 @@ public:
     Vector2     getVelocity()              const { return mVelocity;              }
     Vector2     getAcceleration()          const { return mAcceleration;          }
     Vector2     getScale()                 const { return mScale;                 }
-    Vector2     getColliderDimensions()    const { return mScale;                 }
+    Vector2     getColliderDimensions()    const { return mColliderDimensions;    }
     Vector2     getSpriteSheetDimensions() const { return mSpriteSheetDimensions; }
+    Vector2     getSpawn()                 const { return mSpawnPoint;            }
     Texture2D   getTexture()               const { return mTexture;               }
     TextureType getTextureType()           const { return mTextureType;           }
     Direction   getDirection()             const { return mDirection;             }
+    int         getLives()                 const { return mLives;                 }
     int         getFrameSpeed()            const { return mFrameSpeed;            }
     float       getJumpingPower()          const { return mJumpingPower;          }
     bool        isJumping()                const { return mIsJumping;             }
@@ -126,6 +147,7 @@ public:
     EntityType  getEntityType()            const { return mEntityType;            }
     AIType      getAIType()                const { return mAIType;                }
     AIState     getAIState()               const { return mAIState;               }
+    
 
     
     bool isCollidingTop()    const { return mIsCollidingTop;    }
@@ -135,8 +157,12 @@ public:
 
     void setPosition(Vector2 newPosition)
         { mPosition = newPosition;                 }
+    void setFrame(int frame)
+        { mCurrentFrameIndex = frame;              }
     void setMovement(Vector2 newMovement)
         { mMovement = newMovement;                 }
+    void setVelocity(Vector2 velocity)
+        { mVelocity = velocity;                    }
     void setAcceleration(Vector2 newAcceleration)
         { mAcceleration = newAcceleration;         }
     void setScale(Vector2 newScale)
@@ -167,8 +193,20 @@ public:
         { mAIState = newState;                     }
     void setAIType(AIType newType)
         { mAIType = newType;                       }
+    void setCoolDown(float cooldown)      
+        { mAttackCooldownTime = cooldown;          }
     void setOrigin(Vector2 origin)
         { mOrigin = origin;                        }
+    void setLives(int lives)
+        { mLives = lives;                          }
+    void setSpawn(Vector2 spawn)
+        { mSpawnPoint = spawn;
+          mReturningToSpawn = true; 
+        }
+    void resetAttack(){
+        mAttacking = false;
+        mInAnimation = false;
+    }
 };
 
 #endif // ENTITY_CPP
